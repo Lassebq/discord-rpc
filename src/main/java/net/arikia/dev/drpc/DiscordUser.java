@@ -1,17 +1,12 @@
 package net.arikia.dev.drpc;
 
-import com.sun.jna.Structure;
-
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * @author Nicolas "Vatuu" Adamoglou
  * @version 1.5.1
  * <p>
  * Object containing information about a Discord user.
  */
-public class DiscordUser extends Structure {
+public class DiscordUser {
 
 	/**
 	 * The userId of the player asking to join.
@@ -32,8 +27,4 @@ public class DiscordUser extends Structure {
 	 */
 	public String avatar;
 
-	@Override
-	public List<String> getFieldOrder() {
-		return Arrays.asList("userId", "username", "discriminator", "avatar");
-	}
 }

@@ -1,10 +1,6 @@
 package net.arikia.dev.drpc;
 
-import com.sun.jna.Structure;
 import net.arikia.dev.drpc.callbacks.*;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * @author Nicolas "Vatuu" Adamoglou
@@ -13,7 +9,7 @@ import java.util.List;
  * Object containing references to all event handlers registered. No callbacks are necessary,
  * every event handler is optional. Non-assigned handlers are being ignored.
  */
-public class DiscordEventHandlers extends Structure {
+public class DiscordEventHandlers {
 
 	/**
 	 * Callback called when Discord-RPC was initialized successfully.
@@ -39,10 +35,48 @@ public class DiscordEventHandlers extends Structure {
 	 * Callback called when a join request is received.
 	 */
 	public JoinRequestCallback joinRequest;
+	
+//    void (*ready)(const DiscordUser* request);
+//    void (*disconnected)(int errorCode, const char* message);
+//    void (*errored)(int errorCode, const char* message);
+//    void (*joinGame)(const char* joinSecret);
+//    void (*spectateGame)(const char* spectateSecret);
+//    void (*joinRequest)(const DiscordUser* request);
+	
+	public void ready(DiscordUser request) {
+		if(ready != null) {
+			ready.apply(request);
+		}
+	}
 
-	@Override
-	public List<String> getFieldOrder() {
-		return Arrays.asList("ready", "disconnected", "errored", "joinGame", "spectateGame", "joinRequest");
+	public void disconnected(int errorCode, String message) {
+		if(disconnected != null) {
+			disconnected.apply(errorCode, message);
+		}
+	}
+
+	public void errored(int errorCode, String message) {
+		if(errored != null) {
+			errored.apply(errorCode, message);
+		}
+	}
+
+	public void joinGame(String joinSecret) {
+		if(joinGame != null) {
+			joinGame.apply(joinSecret);
+		}
+	}
+
+	public void spectateGame(String spectateSecret) {
+		if(spectateGame != null) {
+			spectateGame.apply(spectateSecret);
+		}
+	}
+
+	public void joinRequest(DiscordUser request) {
+		if(joinRequest != null) {
+			joinRequest.apply(request);
+		}
 	}
 
 	public static class Builder {

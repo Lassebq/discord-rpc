@@ -1,15 +1,10 @@
 package net.arikia.dev.drpc;
 
-import com.sun.jna.Structure;
-
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * @author Nicolas "Vatuu" Adamoglou
  * @version 1.5.1
  */
-public class DiscordRichPresence extends Structure {
+public class DiscordRichPresence {
 
 	/**
 	 * State of the player's current party.
@@ -73,11 +68,6 @@ public class DiscordRichPresence extends Structure {
 	 */
 	@Deprecated
 	public int instance;
-
-	@Override
-	public List<String> getFieldOrder() {
-		return Arrays.asList("state", "details", "startTimestamp", "endTimestamp", "largeImageKey", "largeImageText", "smallImageKey", "smallImageText", "partyId", "partySize", "partyMax", "matchSecret", "joinSecret", "spectateSecret", "instance");
-	}
 
 	/*+
 	 * Builder object provided to easily assemble DiscordRichPresence objects without having to add a huge assignment Block.

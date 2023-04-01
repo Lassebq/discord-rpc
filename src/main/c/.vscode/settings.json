@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "callback.h": "c",
+        "discord_register.h": "c",
+        "discord_rpc.h": "c",
+        "net_arikia_dev_drpc_discordrpc.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}

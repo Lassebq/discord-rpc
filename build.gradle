@@ -1,0 +1,23 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+}
+
+repositories {
+    mavenCentral()
+}
+
+group = 'net.arikia.dev'
+archivesBaseName = 'discord-rpc'
+version = '1.6.2'
+sourceCompatibility = 1.5
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+}

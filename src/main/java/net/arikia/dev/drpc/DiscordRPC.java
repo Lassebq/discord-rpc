@@ -1,11 +1,6 @@
 package net.arikia.dev.drpc;
 
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 /**
  * @author Nicolas "Vatuu" Adamoglou
@@ -32,7 +27,7 @@ public final class DiscordRPC {
 	 * @param autoRegister  AutoRegister
 	 */
 	public static void discordInitialize(String applicationId, DiscordEventHandlers handlers, boolean autoRegister) {
-		DLL.INSTANCE.Discord_Initialize(applicationId, handlers, autoRegister ? 1 : 0, null);
+		discordInitialize(applicationId, handlers, autoRegister, null);
 	}
 
 	/**
@@ -42,9 +37,7 @@ public final class DiscordRPC {
 	 * @param applicationId ApplicationID/ClientID
 	 * @param command       Launch Command of the application/game.
 	 */
-	public static void discordRegister(String applicationId, String command) {
-		DLL.INSTANCE.Discord_Register(applicationId, command);
-	}
+	public static native void discordRegister(String applicationId, String command);
 
 	/**
 	 * Method to initialize the Discord-RPC within a Steam Application.
@@ -55,9 +48,7 @@ public final class DiscordRPC {
 	 * @param steamId       SteamAppID
 	 * @see DiscordEventHandlers
 	 */
-	public static void discordInitialize(String applicationId, DiscordEventHandlers handlers, boolean autoRegister, String steamId) {
-		DLL.INSTANCE.Discord_Initialize(applicationId, handlers, autoRegister ? 1 : 0, steamId);
-	}
+	public static native void discordInitialize(String applicationId, DiscordEventHandlers handlers, boolean autoRegister, String steamId);
 
 	/**
 	 * Method to register the Steam-Executable of the application/game.
@@ -66,9 +57,7 @@ public final class DiscordRPC {
 	 * @param applicationId ApplicationID/ClientID
 	 * @param steamId       SteamID of the application/game.
 	 */
-	public static void discordRegisterSteam(String applicationId, String steamId) {
-		DLL.INSTANCE.Discord_RegisterSteamGame(applicationId, steamId);
-	}
+	public static native void discordRegisterSteam(String applicationId, String steamId);
 
 	/**
 	 * Method to update the registered EventHandlers, after the initialization was
@@ -76,24 +65,18 @@ public final class DiscordRPC {
 	 *
 	 * @param handlers DiscordEventHandler object with updated callbacks.
 	 */
-	public static void discordUpdateEventHandlers(DiscordEventHandlers handlers) {
-		DLL.INSTANCE.Discord_UpdateHandlers(handlers);
-	}
+	public static native void discordUpdateEventHandlers(DiscordEventHandlers handlers);
 
 	/**
 	 * Method to shutdown the Discord-RPC from within the application.
 	 */
-	public static void discordShutdown() {
-		DLL.INSTANCE.Discord_Shutdown();
-	}
+	public static native void discordShutdown();
 
 	/**
 	 * Method to call Callbacks from within the library.
 	 * Must be called periodically.
 	 */
-	public static void discordRunCallbacks() {
-		DLL.INSTANCE.Discord_RunCallbacks();
-	}
+	public static native void discordRunCallbacks();
 
 	/**
 	 * Method to update the DiscordRichPresence of the client.
@@ -102,16 +85,16 @@ public final class DiscordRPC {
 	 * @see DiscordRichPresence
 	 */
 	public static void discordUpdatePresence(DiscordRichPresence presence) {
-		DLL.INSTANCE.Discord_UpdatePresence(presence);
+		discordUpdatePresence(presence.state, presence.details, presence.startTimestamp, presence.endTimestamp, presence.largeImageKey, presence.largeImageText, presence.smallImageKey, presence.smallImageText, presence.partyId, presence.partySize, presence.partyMax, presence.matchSecret, presence.spectateSecret, presence.joinSecret);
 	}
+
+	private static native void discordUpdatePresence(String state, String details, long startTimestamp, long endTimestamp, String largeImageKey, String largeImageText, String smallImageKey, String smallImageText, String partyId, int partySize, int partyMax, String matchSecret, String spectateSecret, String joinSecret);
 
 	/**
 	 * Method to clear(and therefor hide) the DiscordRichPresence until a new
 	 * presence is applied.
 	 */
-	public static void discordClearPresence() {
-		DLL.INSTANCE.Discord_ClearPresence();
-	}
+	public static native void discordClearPresence();
 
 	/**
 	 * Method to respond to Join/Spectate Callback.
@@ -120,9 +103,7 @@ public final class DiscordRPC {
 	 * @param reply  DiscordReply to request.
 	 * @see DiscordReply
 	 */
-	public static void discordRespond(String userId, DiscordReply reply) {
-		DLL.INSTANCE.Discord_Respond(userId, reply.reply);
-	}
+	public static native void discordRespond(String userId, DiscordReply reply);
 
 	//Load DLL depending on the user's architecture.
 	private static void loadDLL() {
@@ -146,13 +127,15 @@ public final class DiscordRPC {
 			finalPath = "/linux/" + name;
 			try {
 				File f = File.createTempFile("drpc", name);
-				try (InputStream in = DiscordRPC.class.getResourceAsStream(finalPath); OutputStream out = openOutputStream(f)) {
-					if(in == null) throw new FileNotFoundException("Native Linux .so library missing. Please open an issue. https://github.com/Vatuu/discord-rpc");
-					copyFile(in, out);
-					f.deleteOnExit();
-					System.load(f.getAbsolutePath());
-					return;
-				}
+				InputStream in = DiscordRPC.class.getResourceAsStream(finalPath);
+				if(in == null) throw new FileNotFoundException("Native Linux .so library missing. Please open an issue. https://github.com/Vatuu/discord-rpc");
+				OutputStream out = openOutputStream(f);
+				copyFile(in, out);
+				in.close();
+				out.close();
+				f.deleteOnExit();
+				System.load(f.getAbsolutePath());
+				return;
 			} catch (IOException e){
 				e.printStackTrace();
 				System.out.println("Fatal Discord RPC exception occurred. Discord RPC will be unavailable for this session.");
@@ -163,13 +146,19 @@ public final class DiscordRPC {
 		finalPath = "/" + dir + "/" + name;
 
 		try {
-			Path tempDirectoryPath = Files.createTempDirectory("drpc");
-			File f = new File(tempDirectoryPath + File.separator + name);
-
-			try (InputStream in = DiscordRPC.class.getResourceAsStream(finalPath); OutputStream out = openOutputStream(f)) {
+			File tempDir = new File(System.getProperty("java.io.tmpdir"), "drpc" + System.nanoTime());
+			if(!tempDir.mkdir())
+				throw new IOException("Cannot create temporary directory");
+			tempDir.deleteOnExit();
+			File f = new File(tempDir, name);
+			f.deleteOnExit();
+			
+			InputStream in = DiscordRPC.class.getResourceAsStream(finalPath);
+			OutputStream out = openOutputStream(f);
+			try {
 				copyFile(in, out);
-				tempDirectoryPath.toFile().deleteOnExit();
-				f.deleteOnExit();
+				in.close();
+				out.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -178,8 +167,8 @@ public final class DiscordRPC {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+		System.loadLibrary("discord_rpc_jni");
 
-		System.load(f.getAbsolutePath());
 	}
 
 	private static void copyFile(final InputStream input, final OutputStream output) throws IOException {
@@ -241,21 +230,5 @@ public final class DiscordRPC {
 		DiscordReply(int reply) {
 			this.reply = reply;
 		}
-	}
-
-	//JNA Interface
-	private interface DLL extends Library {
-		//DLL INSTANCE = Native.load("discord-rpc", DLL.class);
-		DLL INSTANCE = Native.loadLibrary("discord-rpc", DLL.class);
-
-		void Discord_Initialize(String applicationId, DiscordEventHandlers handlers, int autoRegister, String optionalSteamId);
-		void Discord_Register(String applicationId, String command);
-		void Discord_RegisterSteamGame(String applicationId, String steamId);
-		void Discord_UpdateHandlers(DiscordEventHandlers handlers);
-		void Discord_Shutdown();
-		void Discord_RunCallbacks();
-		void Discord_UpdatePresence(DiscordRichPresence presence);
-		void Discord_ClearPresence();
-		void Discord_Respond(String userId, int reply);
 	}
 }

@@ -1,6 +1,5 @@
 package net.arikia.dev.drpc.callbacks;
 
-import com.sun.jna.Callback;
 import net.arikia.dev.drpc.DiscordUser;
 
 /**
@@ -10,7 +9,7 @@ import net.arikia.dev.drpc.DiscordUser;
  * Interface to be implemented in classes that will be registered as "JoinRequestCallback" Event Handler.
  * @see net.arikia.dev.drpc.DiscordEventHandlers
  **/
-public interface JoinRequestCallback extends Callback {
+public interface JoinRequestCallback {
 
 	/**
 	 * Method called when another player requests to join a game.
